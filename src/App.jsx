@@ -2,11 +2,34 @@ import { useState, useRef, useCallback } from "react";
 
 const SCREENS = { HOME: "home", SCAN: "scan", RESULT: "result", LIBRARY: "library" };
 
-const mockLibrary = [
-  { id: 1, name: "Monstera Deliciosa", family: "Araceae", health: 92, lastWatered: "2 days ago", emoji: "🌿", color: "#2D6A4F" },
-  { id: 2, name: "Pothos Aureus", family: "Epipremnum", health: 78, lastWatered: "4 days ago", emoji: "🍃", color: "#40916C" },
-  { id: 3, name: "Ficus Lyrata", family: "Moraceae", health: 65, lastWatered: "1 week ago", emoji: "🌳", color: "#1B4332" },
-];
+// ─── localStorage helpers ─────────────────────────────────────────────────────
+
+function loadLibrary() {
+  try { return JSON.parse(localStorage.getItem("greenie_library") || "[]"); }
+  catch { return []; }
+}
+
+function saveLibrary(lib) {
+  localStorage.setItem("greenie_library", JSON.stringify(lib));
+}
+
+function loadApiKey() {
+  return localStorage.getItem("greenie_apikey") || import.meta.env.VITE_ANTHROPIC_KEY || "";
+}
+
+function saveApiKey(key) {
+  localStorage.setItem("greenie_apikey", key);
+}
+
+function wateredLabel(dateStr) {
+  if (!dateStr) return "Unknown";
+  const days = Math.floor((Date.now() - new Date(dateStr)) / 86400000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  return `${days} days ago`;
+}
+
+// ─── Stili ───────────────────────────────────────────────────────────────────
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap');
@@ -633,15 +656,19 @@ const styles = `
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 18px;
-    padding: 16px;
+    padding: 14px 14px 12px;
     margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .lib-card:active { opacity: 0.8; }
+
+  .lib-card-top {
     display: flex;
     align-items: center;
     gap: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
   }
-  .lib-card:active { opacity: 0.8; }
 
   .lib-emoji {
     width: 52px; height: 52px;
@@ -651,10 +678,60 @@ const styles = `
     flex-shrink: 0;
   }
 
-  .lib-meta { flex: 1; }
+  .lib-meta { flex: 1; min-width: 0; }
   .lib-name { font-size: 16px; font-weight: 500; }
   .lib-family { font-size: 12px; color: var(--text-muted); font-style: italic; margin-top: 2px; }
-  .lib-watered { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+  .lib-card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .lib-watered-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 300;
+  }
+
+  .water-now-btn {
+    font-size: 11px;
+    font-weight: 500;
+    color: #52B788;
+    background: rgba(82,183,136,0.1);
+    border: 1px solid rgba(82,183,136,0.25);
+    border-radius: 100px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all 0.2s;
+  }
+  .water-now-btn:active { background: rgba(82,183,136,0.2); }
+
+  .watered-today-badge {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--green-bright);
+  }
+
+  .delete-btn {
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 24px; height: 24px;
+    background: rgba(224,122,95,0.12);
+    border: 1px solid rgba(224,122,95,0.25);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    color: var(--danger);
+    cursor: pointer;
+    line-height: 1;
+    transition: all 0.2s;
+  }
+  .delete-btn:active { background: rgba(224,122,95,0.3); }
 
   .scroll-content {
     overflow-y: auto;
@@ -666,6 +743,8 @@ const styles = `
 
   .file-input { display: none; }
 `;
+
+// ─── Anthropic API ────────────────────────────────────────────────────────────
 
 async function identifyPlant(imageBase64, apiKey) {
   const prompt = `You are Flora, an expert botanist AI. Analyze this plant image and respond ONLY with valid JSON (no markdown, no backticks):
@@ -725,6 +804,8 @@ async function identifyPlant(imageBase64, apiKey) {
   return JSON.parse(text.replace(/```json|```/g, "").trim());
 }
 
+// ─── Icone ───────────────────────────────────────────────────────────────────
+
 const HomeIcon = ({ active }) => (
   <svg viewBox="0 0 24 24" fill={active ? "#52B788" : "none"} stroke={active ? "#52B788" : "#6B8F71"} strokeWidth="1.8">
     <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
@@ -753,6 +834,8 @@ function healthColor(score) {
   if (score >= 60) return "#F2CC8F";
   return "#E07A5F";
 }
+
+// ─── Schermate ───────────────────────────────────────────────────────────────
 
 function HomeScreen({ setScreen, library }) {
   const tips = [
@@ -785,7 +868,7 @@ function HomeScreen({ setScreen, library }) {
               <div className="see-all" onClick={() => setScreen(SCREENS.LIBRARY)}>See all →</div>
             </div>
             {library.slice(0, 2).map(p => (
-              <div key={p.id} className="plant-card">
+              <div key={p.id} className="plant-card" onClick={() => setScreen(SCREENS.LIBRARY)}>
                 <div className="plant-emoji-circle" style={{ background: p.color + "33" }}>
                   {p.emoji}
                 </div>
@@ -799,7 +882,7 @@ function HomeScreen({ setScreen, library }) {
                     <div className="health-val">{p.health}%</div>
                   </div>
                 </div>
-                <div className="water-badge">💧 {p.lastWatered}</div>
+                <div className="water-badge">💧 {wateredLabel(p.lastWateredDate)}</div>
               </div>
             ))}
           </div>
@@ -937,7 +1020,7 @@ function ScanScreen({ setScreen, setResult, setImageUrl, apiKey, setApiKey }) {
   );
 }
 
-function ResultScreen({ result, imageUrl, setScreen, addToLibrary }) {
+function ResultScreen({ result, imageUrl, setScreen, addToLibrary, isFromLibrary, onBack }) {
   if (!result) return null;
 
   const c = result.confidence || 88;
@@ -954,6 +1037,8 @@ function ResultScreen({ result, imageUrl, setScreen, addToLibrary }) {
     { icon: "🌿", title: "Fertilizer", value: care.fertilizer },
   ].filter(i => i.value);
 
+  const handleBack = onBack || (() => setScreen(SCREENS.HOME));
+
   return (
     <div className="screen" style={{ background: "var(--bg)" }}>
       <div className="scroll-content">
@@ -963,8 +1048,8 @@ function ResultScreen({ result, imageUrl, setScreen, addToLibrary }) {
             : <div className="result-img-placeholder">{result.emoji || "🌿"}</div>
           }
           <div className="result-gradient" />
-          <div className="result-badge">🌿 Identified</div>
-          <div className="back-btn" onClick={() => setScreen(SCREENS.HOME)}>×</div>
+          <div className="result-badge">🌿 {isFromLibrary ? "Saved" : "Identified"}</div>
+          <div className="back-btn" onClick={handleBack}>×</div>
         </div>
 
         <div className="result-content">
@@ -1015,39 +1100,37 @@ function ResultScreen({ result, imageUrl, setScreen, addToLibrary }) {
             )}
           </div>
 
-          <div className="divider" />
-          <div className="section-label">Care guide</div>
-          <div className="care-grid">
-            {careItems.map((item, i) => (
-              <div key={i} className="care-item">
-                <div className="care-icon">{item.icon}</div>
-                <div className="care-title">{item.title}</div>
-                <div className="care-value">{item.value}</div>
+          {careItems.length > 0 && (
+            <>
+              <div className="divider" />
+              <div className="section-label">Care guide</div>
+              <div className="care-grid">
+                {careItems.map((item, i) => (
+                  <div key={i} className="care-item">
+                    <div className="care-icon">{item.icon}</div>
+                    <div className="care-title">{item.title}</div>
+                    <div className="care-value">{item.value}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
 
-          <button className="add-library-btn" onClick={() => {
-            addToLibrary({
-              id: Date.now(),
-              name: result.commonName,
-              family: result.family || result.scientificName,
-              health: health.score,
-              lastWatered: "Today",
-              emoji: result.emoji || "🌿",
-              color: "#2D6A4F"
-            });
-            setScreen(SCREENS.LIBRARY);
-          }}>
-            + Add to library
-          </button>
+          {!isFromLibrary && (
+            <button className="add-library-btn" onClick={() => {
+              addToLibrary(result, imageUrl);
+              setScreen(SCREENS.LIBRARY);
+            }}>
+              + Add to library
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function LibraryScreen({ library, setScreen }) {
+function LibraryScreen({ library, setScreen, removeFromLibrary, updateWatered, onSelectPlant }) {
   return (
     <div className="screen">
       <div className="lib-header">
@@ -1068,23 +1151,48 @@ function LibraryScreen({ library, setScreen }) {
             </button>
           </div>
         ) : (
-          library.map(p => (
-            <div key={p.id} className="lib-card">
-              <div className="lib-emoji" style={{ background: p.color + "33" }}>{p.emoji}</div>
-              <div className="lib-meta">
-                <div className="lib-name">{p.name}</div>
-                <div className="lib-family">{p.family}</div>
-                <div className="lib-watered">💧 Watered {p.lastWatered}</div>
+          library.map(p => {
+            const label = wateredLabel(p.lastWateredDate);
+            const isToday = label === "Today";
+            return (
+              <div key={p.id} className="lib-card" onClick={() => onSelectPlant(p)}>
+                <button
+                  className="delete-btn"
+                  onClick={e => { e.stopPropagation(); removeFromLibrary(p.id); }}
+                  title="Remove plant"
+                >×</button>
+
+                <div className="lib-card-top">
+                  <div className="lib-emoji" style={{ background: p.color + "33" }}>{p.emoji}</div>
+                  <div className="lib-meta">
+                    <div className="lib-name">{p.name}</div>
+                    <div className="lib-family">{p.family}</div>
+                  </div>
+                  <div className="health-pill" style={{
+                    background: healthColor(p.health) + "22",
+                    color: healthColor(p.health),
+                    border: `1px solid ${healthColor(p.health)}44`
+                  }}>
+                    {p.health}%
+                  </div>
+                </div>
+
+                <div className="lib-card-bottom">
+                  <span className="lib-watered-text">💧 Watered {label}</span>
+                  {isToday ? (
+                    <span className="watered-today-badge">✓ Done today</span>
+                  ) : (
+                    <button
+                      className="water-now-btn"
+                      onClick={e => { e.stopPropagation(); updateWatered(p.id); }}
+                    >
+                      Water now
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="health-pill" style={{
-                background: healthColor(p.health) + "22",
-                color: healthColor(p.health),
-                border: `1px solid ${healthColor(p.health)}44`
-              }}>
-                {p.health}%
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
       <BottomNav current="library" setScreen={setScreen} />
@@ -1118,14 +1226,65 @@ function BottomNav({ current, setScreen }) {
   );
 }
 
+// ─── App root ─────────────────────────────────────────────────────────────────
+
 export default function FloraApp() {
   const [screen, setScreen] = useState(SCREENS.HOME);
   const [result, setResult] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
-  const [library, setLibrary] = useState(mockLibrary);
-  const [apiKey, setApiKey] = useState(import.meta.env.VITE_ANTHROPIC_KEY || "");
+  const [library, setLibrary] = useState(() => loadLibrary());
+  const [apiKey, setApiKey] = useState(() => loadApiKey());
+  const [selectedPlant, setSelectedPlant] = useState(null);
 
-  const addToLibrary = (plant) => setLibrary(prev => [plant, ...prev]);
+  const handleSetApiKey = (key) => {
+    setApiKey(key);
+    saveApiKey(key);
+  };
+
+  const addToLibrary = (res, imgUrl) => {
+    const plant = {
+      id: Date.now(),
+      name: res.commonName,
+      family: res.family || res.scientificName,
+      health: res.health?.score ?? 80,
+      lastWateredDate: new Date().toISOString(),
+      emoji: res.emoji || "🌿",
+      color: "#2D6A4F",
+      resultData: res,
+      imageUrl: imgUrl || null,
+    };
+    const updated = [plant, ...library];
+    setLibrary(updated);
+    saveLibrary(updated);
+  };
+
+  const removeFromLibrary = (id) => {
+    const updated = library.filter(p => p.id !== id);
+    setLibrary(updated);
+    saveLibrary(updated);
+  };
+
+  const updateWatered = (id) => {
+    const updated = library.map(p =>
+      p.id === id ? { ...p, lastWateredDate: new Date().toISOString() } : p
+    );
+    setLibrary(updated);
+    saveLibrary(updated);
+  };
+
+  const handleSelectPlant = (plant) => {
+    setSelectedPlant(plant);
+    setScreen(SCREENS.RESULT);
+  };
+
+  const handleBackFromResult = () => {
+    setSelectedPlant(null);
+    setResult(null);
+    setScreen(selectedPlant ? SCREENS.LIBRARY : SCREENS.HOME);
+  };
+
+  const activeResult = selectedPlant ? selectedPlant.resultData : result;
+  const activeImageUrl = selectedPlant ? selectedPlant.imageUrl : imageUrl;
 
   return (
     <>
@@ -1138,13 +1297,28 @@ export default function FloraApp() {
             setResult={setResult}
             setImageUrl={setImageUrl}
             apiKey={apiKey}
-            setApiKey={setApiKey}
+            setApiKey={handleSetApiKey}
           />
         )}
         {screen === SCREENS.RESULT && (
-          <ResultScreen result={result} imageUrl={imageUrl} setScreen={setScreen} addToLibrary={addToLibrary} />
+          <ResultScreen
+            result={activeResult}
+            imageUrl={activeImageUrl}
+            setScreen={setScreen}
+            addToLibrary={addToLibrary}
+            isFromLibrary={!!selectedPlant}
+            onBack={handleBackFromResult}
+          />
         )}
-        {screen === SCREENS.LIBRARY && <LibraryScreen library={library} setScreen={setScreen} />}
+        {screen === SCREENS.LIBRARY && (
+          <LibraryScreen
+            library={library}
+            setScreen={setScreen}
+            removeFromLibrary={removeFromLibrary}
+            updateWatered={updateWatered}
+            onSelectPlant={handleSelectPlant}
+          />
+        )}
       </div>
     </>
   );
