@@ -219,14 +219,15 @@ describe('Calendar screen', () => {
     expect(screen.getByText('1 plants to track')).toBeInTheDocument();
   });
 
-  test('shows 14-day strip', () => {
+  test('shows 3 view type tabs', () => {
     render(<FloraApp />);
     fireEvent.click(screen.getByText('Water'));
-    const dayBtns = document.querySelectorAll('.day-btn');
-    expect(dayBtns).toHaveLength(14);
+    expect(screen.getByText('Agenda')).toBeInTheDocument();
+    expect(screen.getByText('Settimana')).toBeInTheDocument();
+    expect(screen.getByText('Mese')).toBeInTheDocument();
   });
 
-  test('shows overdue plant when last watered 10 days ago with 7-day interval', () => {
+  test('shows overdue plant in Overdue group', () => {
     const tenDaysAgo = new Date();
     tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
     const plants = [
@@ -239,7 +240,7 @@ describe('Calendar screen', () => {
     expect(screen.getByText('Pothos')).toBeInTheDocument();
   });
 
-  test('Water button removes plant from overdue list', () => {
+  test('Water button moves plant from Overdue to Later', () => {
     const tenDaysAgo = new Date();
     tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
     const plants = [
@@ -248,13 +249,13 @@ describe('Calendar screen', () => {
     localStorage.setItem('greenie_library', JSON.stringify(plants));
     render(<FloraApp />);
     fireEvent.click(screen.getByText('Water'));
-    expect(screen.getByText('Pothos')).toBeInTheDocument();
+    expect(screen.getByText('Overdue')).toBeInTheDocument();
     fireEvent.click(screen.getByText('💧 Water'));
-    expect(screen.queryByText('Pothos')).not.toBeInTheDocument();
-    expect(screen.getByText(/No watering needed/i)).toBeInTheDocument();
+    expect(screen.queryByText('Overdue')).not.toBeInTheDocument();
+    expect(screen.getByText('✓ Done')).toBeInTheDocument();
   });
 
-  test('shows "no watering needed" when plant was watered today with 7-day interval', () => {
+  test('plant watered today appears in This week group', () => {
     const today = new Date();
     const plants = [
       { id: 1, name: 'Cactus', family: 'Cactaceae', health: 95, lastWateredDate: today.toISOString(), emoji: '🌵', color: '#52B788', resultData: { care: { water: 'Every 7 days' } } },
@@ -262,6 +263,24 @@ describe('Calendar screen', () => {
     localStorage.setItem('greenie_library', JSON.stringify(plants));
     render(<FloraApp />);
     fireEvent.click(screen.getByText('Water'));
-    expect(screen.getByText(/No watering needed/i)).toBeInTheDocument();
+    expect(screen.getByText('This week')).toBeInTheDocument();
+    expect(screen.getByText('Cactus')).toBeInTheDocument();
+  });
+
+  test('Settimana view shows 7 day columns', () => {
+    render(<FloraApp />);
+    fireEvent.click(screen.getByText('Water'));
+    fireEvent.click(screen.getByText('Settimana'));
+    const cols = document.querySelectorAll('.week-col');
+    expect(cols).toHaveLength(7);
+  });
+
+  test('Mese view shows month grid and navigation', () => {
+    render(<FloraApp />);
+    fireEvent.click(screen.getByText('Water'));
+    fireEvent.click(screen.getByText('Mese'));
+    const cells = document.querySelectorAll('.month-cell');
+    expect(cells.length).toBeGreaterThanOrEqual(28);
+    expect(document.querySelector('.month-nav-label')).toBeInTheDocument();
   });
 });

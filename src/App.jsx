@@ -934,7 +934,117 @@ const styles = `
   .assign-from { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
   .assign-arrow { font-size: 18px; color: var(--green-bright); font-weight: 300; }
 
-  /* ── Calendar ── */
+  /* ── Calendar – week view ── */
+  .week-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px 12px; flex-shrink: 0;
+  }
+  .week-nav-label { font-size: 14px; color: var(--text); font-weight: 500; }
+  .week-nav-btn {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-body); line-height: 1;
+  }
+  .week-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px; padding: 0 10px 100px;
+    overflow-y: auto; scrollbar-width: none; align-content: start;
+  }
+  .week-grid::-webkit-scrollbar { display: none; }
+  .week-col { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+  .week-col-header { display: flex; flex-direction: column; align-items: center; gap: 3px; padding-bottom: 6px; width: 100%; }
+  .week-day-name { font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+  .week-day-num {
+    width: 26px; height: 26px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 500; color: var(--text);
+  }
+  .week-day-num.is-today { background: var(--green-mid); }
+  .week-day-num.is-past { color: var(--text-muted); }
+  .week-chip {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 2px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .week-chip:active { opacity: 0.7; }
+  .week-chip.overdue { border-color: rgba(224,122,95,0.45); background: rgba(224,122,95,0.08); }
+  .week-chip.due-today { border-color: rgba(242,204,143,0.35); background: rgba(242,204,143,0.06); }
+  .week-chip.done { opacity: 0.4; }
+  .week-chip-emoji { font-size: 15px; line-height: 1; }
+  .week-chip-name { font-size: 8px; color: var(--text-muted); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; padding: 0 2px; }
+  .week-chip-check { font-size: 8px; color: var(--green-bright); }
+
+  /* ── Calendar – month view ── */
+  .month-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px 10px; flex-shrink: 0;
+  }
+  .month-nav-label { font-size: 15px; font-weight: 500; color: var(--text); }
+  .month-nav-btn {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-body); line-height: 1;
+  }
+  .month-weekdays {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    padding: 0 10px; margin-bottom: 3px; flex-shrink: 0;
+  }
+  .month-weekday { text-align: center; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); padding: 3px 0; }
+  .month-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 2px; padding: 0 10px; flex-shrink: 0;
+  }
+  .month-cell {
+    aspect-ratio: 1; border-radius: 10px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; cursor: pointer; transition: background 0.15s;
+  }
+  .month-cell:active { background: var(--surface2); }
+  .month-cell.other-month .month-cell-num { color: rgba(255,255,255,0.18); }
+  .month-cell.other-month .month-dots { opacity: 0.3; }
+  .month-cell.today-cell { background: var(--green-mid); }
+  .month-cell.selected-cell:not(.today-cell) { background: var(--surface2); outline: 1px solid rgba(82,183,136,0.5); }
+  .month-cell-num { font-size: 13px; color: var(--text); font-weight: 400; line-height: 1; }
+  .month-cell.today-cell .month-cell-num { font-weight: 700; }
+  .month-dots { display: flex; gap: 2px; }
+  .month-dot { width: 4px; height: 4px; border-radius: 50%; }
+  .month-panel { flex: 1; overflow-y: auto; padding: 10px 24px 100px; scrollbar-width: none; }
+  .month-panel::-webkit-scrollbar { display: none; }
+  .month-panel-title { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; padding-top: 4px; }
+
+  /* ── Calendar – view switcher ── */
+  .view-switcher {
+    display: flex;
+    gap: 3px;
+    padding: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin: 0 24px 14px;
+    flex-shrink: 0;
+  }
+  .view-tab {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-muted);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-body);
+    border: none;
+    background: transparent;
+  }
+  .view-tab.active { background: var(--green-mid); color: var(--text); font-weight: 500; }
+
+  /* ── Calendar – agenda ── */
   .cal-scroll {
     flex: 1;
     overflow-y: auto;
@@ -1663,96 +1773,281 @@ function toDateStr(date) {
   return date.toISOString().slice(0, 10);
 }
 
-function CalendarScreen({ library, updateWatered, setScreen }) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+function calToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
-  const days = Array.from({ length: 14 }, (_, i) => {
+function plantNextDate(plant, today) {
+  if (!plant.lastWateredDate) return today;
+  const interval = parseWaterDays(plant.resultData?.care?.water);
+  const last = new Date(plant.lastWateredDate);
+  last.setHours(0, 0, 0, 0);
+  const next = new Date(last);
+  next.setDate(last.getDate() + interval);
+  return next;
+}
+
+function plantStatus(plant, today) {
+  const next = plantNextDate(plant, today);
+  if (next < today) return "overdue";
+  if (toDateStr(next) === toDateStr(today)) return "due-today";
+  return "ok";
+}
+
+function plantDueLabel(plant, today) {
+  const next = plantNextDate(plant, today);
+  const diff = Math.round((next - today) / 86400000);
+  if (diff < 0) return `Overdue by ${Math.abs(diff)}d`;
+  if (diff === 0) return "Due today";
+  if (diff === 1) return "Due tomorrow";
+  return `Due in ${diff}d`;
+}
+
+function isWateredToday(plant, today) {
+  if (!plant.lastWateredDate) return false;
+  const last = new Date(plant.lastWateredDate);
+  last.setHours(0, 0, 0, 0);
+  return toDateStr(last) === toDateStr(today);
+}
+
+function plantsForDay(library, dayStr, today) {
+  const day = new Date(dayStr);
+  return library.filter(p => {
+    const next = plantNextDate(p, today);
+    if (dayStr === toDateStr(today)) return next <= day;
+    return toDateStr(next) === dayStr;
+  });
+}
+
+// ─── CalendarPlantRow ─────────────────────────────────────────────────────────
+
+function CalendarPlantRow({ plant, today, updateWatered }) {
+  const status = plantStatus(plant, today);
+  const interval = parseWaterDays(plant.resultData?.care?.water);
+  const watered = isWateredToday(plant, today);
+  return (
+    <div className={`cal-plant-card ${status}`}>
+      <div className="cal-urgency" style={{
+        background: status === "overdue" ? "#E07A5F" : status === "due-today" ? "#F2CC8F" : "#52B788"
+      }} />
+      <div className="cal-emoji" style={{ background: plant.color + "33" }}>{plant.emoji}</div>
+      <div className="cal-info">
+        <div className="cal-name">{plant.name}</div>
+        <div className={`cal-due ${status}`}>{plantDueLabel(plant, today)} · every {interval}d</div>
+      </div>
+      <button
+        className={`cal-water-btn${watered ? " done" : ""}`}
+        onClick={() => !watered && updateWatered(plant.id)}
+      >
+        {watered ? "✓ Done" : "💧 Water"}
+      </button>
+    </div>
+  );
+}
+
+// ─── AgendaView ───────────────────────────────────────────────────────────────
+
+function AgendaView({ library, today, updateWatered }) {
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+  const nextWeek = new Date(today); nextWeek.setDate(today.getDate() + 7);
+  const sorted = [...library].sort((a, b) => plantNextDate(a, today) - plantNextDate(b, today));
+
+  const groups = [
+    { key: "overdue",  label: "Overdue",     plants: sorted.filter(p => plantNextDate(p, today) < today) },
+    { key: "today",    label: "Today",       plants: sorted.filter(p => toDateStr(plantNextDate(p, today)) === toDateStr(today)) },
+    { key: "tomorrow", label: "Tomorrow",    plants: sorted.filter(p => toDateStr(plantNextDate(p, today)) === toDateStr(tomorrow)) },
+    { key: "week",     label: "This week",   plants: sorted.filter(p => { const n = plantNextDate(p, today); return n > tomorrow && n <= nextWeek; }) },
+    { key: "later",    label: "Later",       plants: sorted.filter(p => plantNextDate(p, today) > nextWeek) },
+  ];
+
+  if (library.length === 0) return (
+    <div className="cal-empty">
+      <div style={{ fontSize: 40, marginBottom: 12 }}>💧</div>
+      <div>No plants to track yet</div>
+      <div style={{ marginTop: 6, fontSize: 12 }}>Add plants via Scan to see their schedule</div>
+    </div>
+  );
+
+  return (
+    <div className="cal-scroll">
+      {groups.map(g => g.plants.length > 0 && (
+        <div key={g.key} className="cal-section">
+          <div className="cal-section-title">{g.label}</div>
+          {g.plants.map(p => <CalendarPlantRow key={p.id} plant={p} today={today} updateWatered={updateWatered} />)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── WeekView ─────────────────────────────────────────────────────────────────
+
+const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function WeekView({ library, today, updateWatered }) {
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const weekStart = (() => {
     const d = new Date(today);
-    d.setDate(today.getDate() + i);
+    const dow = d.getDay();
+    d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1) + weekOffset * 7);
+    return d;
+  })();
+
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
     return d;
   });
 
+  const startD = weekDays[0], endD = weekDays[6];
+  const weekLabel = startD.getMonth() === endD.getMonth()
+    ? `${startD.getDate()}–${endD.getDate()} ${MONTH_NAMES[startD.getMonth()].slice(0, 3)}`
+    : `${startD.getDate()} ${MONTH_NAMES[startD.getMonth()].slice(0, 3)} – ${endD.getDate()} ${MONTH_NAMES[endD.getMonth()].slice(0, 3)}`;
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className="week-nav">
+        <button className="week-nav-btn" onClick={() => setWeekOffset(o => o - 1)}>‹</button>
+        <div className="week-nav-label">{weekLabel}</div>
+        <button className="week-nav-btn" onClick={() => setWeekOffset(o => o + 1)}>›</button>
+      </div>
+      <div className="week-grid">
+        {weekDays.map(d => {
+          const str = toDateStr(d);
+          const isT = str === toDateStr(today);
+          const isPast = d < today;
+          const dayPlants = isPast ? [] : plantsForDay(library, str, today);
+          return (
+            <div key={str} className="week-col">
+              <div className="week-col-header">
+                <div className="week-day-name">{DAY_NAMES_SHORT[d.getDay()]}</div>
+                <div className={`week-day-num${isT ? " is-today" : ""}${isPast && !isT ? " is-past" : ""}`}>{d.getDate()}</div>
+              </div>
+              {dayPlants.map(p => {
+                const status = plantStatus(p, today);
+                const watered = isWateredToday(p, today);
+                return (
+                  <div
+                    key={p.id}
+                    className={`week-chip ${status}${watered ? " done" : ""}`}
+                    onClick={() => !watered && updateWatered(p.id)}
+                    title={p.name}
+                  >
+                    <span className="week-chip-emoji">{p.emoji}</span>
+                    <span className="week-chip-name">{p.name.split(" ")[0].slice(0, 7)}</span>
+                    {watered && <span className="week-chip-check">✓</span>}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── MonthView ────────────────────────────────────────────────────────────────
+
+function MonthView({ library, today, updateWatered }) {
+  const [monthOffset, setMonthOffset] = useState(0);
   const [selectedDay, setSelectedDay] = useState(toDateStr(today));
 
-  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const year  = today.getFullYear();
+  const month = ((today.getMonth() + monthOffset) % 12 + 12) % 12;
+  const viewYear = year + Math.floor((today.getMonth() + monthOffset) / 12);
 
-  const plantNextDate = (plant) => {
-    if (!plant.lastWateredDate) return today;
-    const interval = parseWaterDays(plant.resultData?.care?.water);
-    const last = new Date(plant.lastWateredDate);
-    last.setHours(0, 0, 0, 0);
-    const next = new Date(last);
-    next.setDate(last.getDate() + interval);
-    return next;
+  const firstDay = new Date(viewYear, month, 1);
+  const dow = firstDay.getDay();
+  const startOffset = dow === 0 ? 6 : dow - 1;
+  const start = new Date(firstDay);
+  start.setDate(start.getDate() - startOffset);
+
+  const daysInMonth = new Date(viewYear, month + 1, 0).getDate();
+  const totalCells = Math.ceil((daysInMonth + startOffset) / 7) * 7;
+
+  const cells = Array.from({ length: totalCells }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return d;
+  });
+
+  const getDotsForCell = (d) => {
+    const str = toDateStr(d);
+    const plants = plantsForDay(library, str, today);
+    return plants.map(p => plantStatus(p, today));
   };
-
-  const plantsForDay = (dayStr) => {
-    const day = new Date(dayStr);
-    return library.filter(p => {
-      const next = plantNextDate(p);
-      if (dayStr === toDateStr(today)) return next <= day;
-      return toDateStr(next) === dayStr;
-    });
-  };
-
-  const hasDot = (d) => plantsForDay(toDateStr(d)).length > 0;
 
   const selectedDate = new Date(selectedDay);
-  const isToday = toDateStr(selectedDate) === toDateStr(today);
-  const dayPlants = plantsForDay(selectedDay);
+  const isSelectedToday = selectedDay === toDateStr(today);
+  const selectedPlants = plantsForDay(library, selectedDay, today);
 
-  const overdueOnSelected = isToday
-    ? dayPlants.filter(p => plantNextDate(p) < today)
-    : [];
-  const dueOnSelected = isToday
-    ? dayPlants.filter(p => toDateStr(plantNextDate(p)) === selectedDay)
-    : dayPlants;
-
-  const getStatus = (plant) => {
-    const next = plantNextDate(plant);
-    if (next < today) return "overdue";
-    if (toDateStr(next) === toDateStr(today)) return "due-today";
-    return "ok";
-  };
-
-  const getDueLabel = (plant) => {
-    const next = plantNextDate(plant);
-    const diff = Math.round((next - today) / 86400000);
-    if (diff < 0) return `Overdue by ${Math.abs(diff)} day${Math.abs(diff) !== 1 ? "s" : ""}`;
-    if (diff === 0) return "Due today";
-    if (diff === 1) return "Due tomorrow";
-    return `Due in ${diff} days`;
-  };
-
-  const PlantRow = ({ plant }) => {
-    const status = getStatus(plant);
-    const interval = parseWaterDays(plant.resultData?.care?.water);
-    const lastWatered = new Date(plant.lastWateredDate);
-    lastWatered.setHours(0, 0, 0, 0);
-    const wateredToday = toDateStr(lastWatered) === toDateStr(today);
-
-    return (
-      <div className={`cal-plant-card ${status}`}>
-        <div className="cal-urgency" style={{
-          background: status === "overdue" ? "#E07A5F" : status === "due-today" ? "#F2CC8F" : "#52B788"
-        }} />
-        <div className="cal-emoji" style={{ background: plant.color + "33" }}>{plant.emoji}</div>
-        <div className="cal-info">
-          <div className="cal-name">{plant.name}</div>
-          <div className={`cal-due ${status}`}>
-            {getDueLabel(plant)} · every {interval}d
-          </div>
-        </div>
-        <button
-          className={`cal-water-btn${wateredToday ? " done" : ""}`}
-          onClick={() => !wateredToday && updateWatered(plant.id)}
-        >
-          {wateredToday ? "✓ Done" : "💧 Water"}
-        </button>
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className="month-nav">
+        <button className="month-nav-btn" onClick={() => setMonthOffset(o => o - 1)}>‹</button>
+        <div className="month-nav-label">{MONTH_NAMES[month]} {viewYear}</div>
+        <button className="month-nav-btn" onClick={() => setMonthOffset(o => o + 1)}>›</button>
       </div>
-    );
-  };
+      <div className="month-weekdays">
+        {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
+          <div key={d} className="month-weekday">{d}</div>
+        ))}
+      </div>
+      <div className="month-grid">
+        {cells.map(d => {
+          const str = toDateStr(d);
+          const isThisMonth = d.getMonth() === month;
+          const isT = str === toDateStr(today);
+          const isSelected = str === selectedDay;
+          const dots = getDotsForCell(d);
+          return (
+            <div
+              key={str}
+              className={`month-cell${!isThisMonth ? " other-month" : ""}${isT ? " today-cell" : ""}${isSelected && !isT ? " selected-cell" : ""}`}
+              onClick={() => setSelectedDay(str)}
+            >
+              <div className="month-cell-num">{d.getDate()}</div>
+              {dots.length > 0 && (
+                <div className="month-dots">
+                  {dots.slice(0, 3).map((s, i) => (
+                    <div key={i} className="month-dot" style={{
+                      background: s === "overdue" ? "#E07A5F" : s === "due-today" ? "#F2CC8F" : "#52B788"
+                    }} />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="month-panel">
+        {selectedPlants.length === 0 ? (
+          <div className="cal-empty" style={{ padding: "16px 0" }}>
+            <div>No watering {isSelectedToday ? "today" : `on ${DAY_NAMES_SHORT[selectedDate.getDay()]} ${selectedDate.getDate()}`}</div>
+          </div>
+        ) : (
+          <>
+            <div className="month-panel-title">
+              {isSelectedToday ? "Today" : `${DAY_NAMES_SHORT[selectedDate.getDay()]} ${selectedDate.getDate()} ${MONTH_NAMES[selectedDate.getMonth()].slice(0, 3)}`}
+            </div>
+            {selectedPlants.map(p => <CalendarPlantRow key={p.id} plant={p} today={today} updateWatered={updateWatered} />)}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── CalendarScreen ───────────────────────────────────────────────────────────
+
+function CalendarScreen({ library, updateWatered, setScreen }) {
+  const today = useState(() => calToday())[0];
+  const [viewType, setViewType] = useState("agenda");
 
   return (
     <div className="screen" style={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
@@ -1761,54 +2056,17 @@ function CalendarScreen({ library, updateWatered, setScreen }) {
         <div className="lib-subtitle">{library.length} plants to track</div>
       </div>
 
-      <div className="days-strip">
-        {days.map(d => {
-          const str = toDateStr(d);
-          const active = str === selectedDay;
-          const isT = str === toDateStr(today);
-          return (
-            <div
-              key={str}
-              className={`day-btn${active ? " active" : ""}${isT && !active ? " today" : ""}`}
-              onClick={() => setSelectedDay(str)}
-            >
-              <div className="day-label">{DAY_NAMES[d.getDay()]}</div>
-              <div className="day-num">{d.getDate()}</div>
-              {hasDot(d) && !active && <div className="day-dot" />}
-            </div>
-          );
-        })}
+      <div className="view-switcher">
+        {[["agenda","Agenda"],["week","Settimana"],["month","Mese"]].map(([v, label]) => (
+          <button key={v} className={`view-tab${viewType === v ? " active" : ""}`} onClick={() => setViewType(v)}>
+            {label}
+          </button>
+        ))}
       </div>
 
-      <div className="cal-scroll">
-        {library.length === 0 ? (
-          <div className="cal-empty">
-            <div style={{ fontSize: 40, marginBottom: 12 }}>💧</div>
-            <div>No plants to track yet</div>
-            <div style={{ marginTop: 6, fontSize: 12 }}>Add plants via Scan to see their schedule</div>
-          </div>
-        ) : dayPlants.length === 0 ? (
-          <div className="cal-empty">
-            <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-            <div>No watering needed {isToday ? "today" : "on this day"}</div>
-          </div>
-        ) : (
-          <>
-            {overdueOnSelected.length > 0 && (
-              <div className="cal-section">
-                <div className="cal-section-title">Overdue</div>
-                {overdueOnSelected.map(p => <PlantRow key={p.id} plant={p} />)}
-              </div>
-            )}
-            {dueOnSelected.length > 0 && (
-              <div className="cal-section">
-                <div className="cal-section-title">{isToday ? "Due today" : `${DAY_NAMES[selectedDate.getDay()]} ${selectedDate.getDate()}`}</div>
-                {dueOnSelected.map(p => <PlantRow key={p.id} plant={p} />)}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      {viewType === "agenda"  && <AgendaView  library={library} today={today} updateWatered={updateWatered} />}
+      {viewType === "week"    && <WeekView    library={library} today={today} updateWatered={updateWatered} />}
+      {viewType === "month"   && <MonthView   library={library} today={today} updateWatered={updateWatered} />}
 
       <BottomNav current="calendar" setScreen={setScreen} />
     </div>
