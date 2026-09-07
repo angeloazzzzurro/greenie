@@ -1,6 +1,15 @@
 import { useState, useRef, useCallback } from "react";
 
-const SCREENS = { HOME: "home", SCAN: "scan", RESULT: "result", LIBRARY: "library" };
+const SCREENS = { HOME: "home", SCAN: "scan", RESULT: "result", LIBRARY: "library", MAP: "map" };
+
+const ROOMS = [
+  { id: "living",   name: "Living Room", icon: "🛋️",  color: "#2D6A4F" },
+  { id: "bedroom",  name: "Bedroom",     icon: "🛏️",  color: "#1B4332" },
+  { id: "kitchen",  name: "Kitchen",     icon: "🍳",  color: "#40916C" },
+  { id: "bathroom", name: "Bathroom",    icon: "🚿",  color: "#1B4332" },
+  { id: "balcony",  name: "Balcony",     icon: "🌤️", color: "#52B788" },
+  { id: "study",    name: "Study",       icon: "📚",  color: "#2D6A4F" },
+];
 
 // ─── localStorage helpers ─────────────────────────────────────────────────────
 
@@ -742,6 +751,188 @@ const styles = `
   .scroll-content::-webkit-scrollbar { display: none; }
 
   .file-input { display: none; }
+
+  .rooms-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 24px 100px;
+    scrollbar-width: none;
+  }
+  .rooms-scroll::-webkit-scrollbar { display: none; }
+
+  .room-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+
+  .room-card-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .room-icon-wrap {
+    width: 50px; height: 50px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 24px;
+  }
+
+  .room-name { font-size: 16px; font-weight: 500; color: var(--text); }
+  .room-count { font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 300; }
+
+  .room-plants-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .room-plant-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 5px 10px 5px 6px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .room-plant-chip:active { opacity: 0.7; }
+
+  .room-plant-emoji { font-size: 16px; line-height: 1; }
+  .room-plant-name { font-size: 12px; color: var(--text); font-weight: 400; }
+  .room-plant-remove { font-size: 15px; color: var(--text-muted); margin-left: 1px; line-height: 1; }
+
+  .room-add-btn {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: 1px dashed rgba(82,183,136,0.2);
+    color: var(--text-muted);
+    border-radius: 12px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .room-add-btn:active { border-color: var(--green-bright); color: var(--green-bright); background: rgba(82,183,136,0.06); }
+
+  .unassigned-section {
+    background: rgba(82,183,136,0.06);
+    border: 1px solid rgba(82,183,136,0.15);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .unassigned-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .unassigned-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 200;
+  }
+
+  .assign-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    background: var(--surface);
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    padding-bottom: 40px;
+    z-index: 201;
+    max-height: 65vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+    animation: slideUp 0.28s ease;
+  }
+  .assign-sheet::-webkit-scrollbar { display: none; }
+
+  @keyframes slideUp {
+    from { transform: translateX(-50%) translateY(100%); }
+    to   { transform: translateX(-50%) translateY(0); }
+  }
+
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    margin: 12px auto 16px;
+  }
+
+  .sheet-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    padding: 0 24px 4px;
+    color: var(--text);
+  }
+  .sheet-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 0 24px 16px;
+    font-weight: 300;
+  }
+
+  .sheet-divider { height: 1px; background: var(--border); margin: 0 0 4px; }
+
+  .sheet-empty {
+    text-align: center;
+    padding: 32px 24px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 300;
+  }
+
+  .assign-plant-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .assign-plant-item:active { background: var(--surface2); }
+
+  .assign-emoji {
+    width: 46px; height: 46px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .assign-info { flex: 1; }
+  .assign-name { font-size: 15px; font-weight: 500; color: var(--text); }
+  .assign-family { font-size: 12px; color: var(--text-muted); font-style: italic; margin-top: 2px; }
+  .assign-from { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .assign-arrow { font-size: 18px; color: var(--green-bright); font-weight: 300; }
 `;
 
 // ─── Anthropic API ────────────────────────────────────────────────────────────
@@ -817,6 +1008,14 @@ const ScanIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="#6B8F71" strokeWidth="1.8">
     <circle cx="12" cy="12" r="3"/>
     <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
+  </svg>
+);
+
+const MapIcon = ({ active }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={active ? "#52B788" : "#6B8F71"} strokeWidth="1.8">
+    <polygon points="3 7 9 4 15 7 21 4 21 17 15 20 9 17 3 20"/>
+    <line x1="9" y1="4" x2="9" y2="17"/>
+    <line x1="15" y1="7" x2="15" y2="20"/>
   </svg>
 );
 
@@ -1200,6 +1399,130 @@ function LibraryScreen({ library, setScreen, removeFromLibrary, updateWatered, o
   );
 }
 
+function MapScreen({ library, setScreen }) {
+  const [assignments, setAssignments] = useState(() => {
+    const d = {};
+    if (library[0]) d[library[0].id] = "living";
+    if (library[1]) d[library[1].id] = "living";
+    if (library[2]) d[library[2].id] = "bedroom";
+    return d;
+  });
+  const [addingTo, setAddingTo] = useState(null);
+
+  const plantsInRoom = (roomId) => library.filter(p => assignments[p.id] === roomId);
+  const unassigned = library.filter(p => !assignments[p.id]);
+  const assignedRoomCount = new Set(Object.values(assignments)).size;
+
+  const assignPlant = (plantId, roomId) => {
+    setAssignments(prev => ({ ...prev, [plantId]: roomId }));
+    setAddingTo(null);
+  };
+
+  const removeFromRoom = (plantId) => {
+    setAssignments(prev => { const n = { ...prev }; delete n[plantId]; return n; });
+  };
+
+  const availableForRoom = (roomId) =>
+    library.filter(p => assignments[p.id] !== roomId);
+
+  return (
+    <div className="screen" style={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      <div className="lib-header" style={{ flexShrink: 0 }}>
+        <div className="lib-title">My Home</div>
+        <div className="lib-subtitle">
+          {library.length} plants · {assignedRoomCount} {assignedRoomCount === 1 ? "room" : "rooms"}
+        </div>
+      </div>
+
+      <div className="rooms-scroll">
+        {unassigned.length > 0 && (
+          <div className="unassigned-section">
+            <div className="unassigned-label">Not placed yet</div>
+            <div className="unassigned-chips">
+              {unassigned.map(plant => (
+                <div key={plant.id} className="room-plant-chip">
+                  <span className="room-plant-emoji">{plant.emoji}</span>
+                  <span className="room-plant-name">{plant.name.split(" ")[0]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {ROOMS.map(room => {
+          const plants = plantsInRoom(room.id);
+          return (
+            <div key={room.id} className="room-card">
+              <div className="room-card-top">
+                <div className="room-icon-wrap" style={{ background: room.color + "28" }}>
+                  {room.icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div className="room-name">{room.name}</div>
+                  <div className="room-count">
+                    {plants.length === 0 ? "No plants" : `${plants.length} ${plants.length === 1 ? "plant" : "plants"}`}
+                  </div>
+                </div>
+              </div>
+
+              {plants.length > 0 && (
+                <div className="room-plants-row">
+                  {plants.map(plant => (
+                    <div key={plant.id} className="room-plant-chip" onClick={() => removeFromRoom(plant.id)}>
+                      <span className="room-plant-emoji">{plant.emoji}</span>
+                      <span className="room-plant-name">{plant.name.split(" ")[0]}</span>
+                      <span className="room-plant-remove">×</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button className="room-add-btn" onClick={() => setAddingTo(room.id)}>
+                + Add plant
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {addingTo && (
+        <>
+          <div className="sheet-overlay" onClick={() => setAddingTo(null)} />
+          <div className="assign-sheet" onClick={e => e.stopPropagation()}>
+            <div className="sheet-handle" />
+            <div className="sheet-title">
+              {ROOMS.find(r => r.id === addingTo)?.icon} {ROOMS.find(r => r.id === addingTo)?.name}
+            </div>
+            <div className="sheet-subtitle">Select a plant to add to this room</div>
+            <div className="sheet-divider" />
+            {availableForRoom(addingTo).length === 0 ? (
+              <div className="sheet-empty">All your plants are already here 🌿</div>
+            ) : (
+              availableForRoom(addingTo).map(plant => (
+                <div key={plant.id} className="assign-plant-item" onClick={e => { e.stopPropagation(); assignPlant(plant.id, addingTo); }}>
+                  <div className="assign-emoji" style={{ background: plant.color + "33" }}>{plant.emoji}</div>
+                  <div className="assign-info">
+                    <div className="assign-name">{plant.name}</div>
+                    <div className="assign-family">{plant.family}</div>
+                    {assignments[plant.id] && (
+                      <div className="assign-from">
+                        Currently in {ROOMS.find(r => r.id === assignments[plant.id])?.name}
+                      </div>
+                    )}
+                  </div>
+                  <div className="assign-arrow">→</div>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+
+      <BottomNav current="map" setScreen={setScreen} />
+    </div>
+  );
+}
+
 function BottomNav({ current, setScreen }) {
   return (
     <div className="bottom-nav">
@@ -1217,6 +1540,10 @@ function BottomNav({ current, setScreen }) {
           <ScanIcon />
         </div>
         <div className="nav-label" style={{ color: "#6B8F71", marginTop: 2 }}>Scan</div>
+      </div>
+      <div className={`nav-item ${current === "map" ? "active" : ""}`} onClick={() => setScreen(SCREENS.MAP)}>
+        <MapIcon active={current === "map"} />
+        <div className="nav-label" style={{ color: current === "map" ? "#52B788" : "#6B8F71" }}>Map</div>
       </div>
       <div className={`nav-item ${current === "library" ? "active" : ""}`} onClick={() => setScreen(SCREENS.LIBRARY)}>
         <LibIcon active={current === "library"} />
@@ -1319,6 +1646,7 @@ export default function FloraApp() {
             onSelectPlant={handleSelectPlant}
           />
         )}
+        {screen === SCREENS.MAP && <MapScreen library={library} setScreen={setScreen} />}
       </div>
     </>
   );
