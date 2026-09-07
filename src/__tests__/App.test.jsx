@@ -58,6 +58,7 @@ describe('Navigation', () => {
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.getAllByText('Scan').length).toBeGreaterThan(0);
     expect(screen.getByText('Map')).toBeInTheDocument();
+    expect(screen.getByText('Water')).toBeInTheDocument();
     expect(screen.getByText('Library')).toBeInTheDocument();
   });
 
@@ -190,5 +191,77 @@ describe('Map screen', () => {
     expect(screen.getByText('Select a plant to add to this room')).toBeInTheDocument();
     fireEvent.click(document.querySelector('.sheet-overlay'));
     expect(screen.queryByText('Select a plant to add to this room')).not.toBeInTheDocument();
+  });
+});
+
+// ─── Calendar screen ──────────────────────────────────────────────────────────
+
+describe('Calendar screen', () => {
+  test('navigates to calendar screen via Water tab', () => {
+    render(<FloraApp />);
+    fireEvent.click(screen.getByText('Water'));
+    expect(screen.getByText('Watering')).toBeInTheDocument();
+  });
+
+  test('shows empty state when no plants', () => {
+    render(<FloraApp />);
+    fireEvent.click(screen.getByText('Water'));
+    expect(screen.getByText('No plants to track yet')).toBeInTheDocument();
+  });
+
+  test('shows plant count in subtitle', () => {
+    const plants = [
+      { id: 1, name: 'Monstera', family: 'Araceae', health: 90, lastWateredDate: new Date().toISOString(), emoji: '🌿', color: '#2D6A4F', resultData: { care: { water: 'Every 7 days' } } },
+    ];
+    localStorage.setItem('greenie_library', JSON.stringify(plants));
+    render(<FloraApp />);
+    fireEvent.click(screen.getByText('Water'));
+    expect(screen.getByText('1 plants to track')).toBeInTheDocument();
+  });
+
+  test('shows 14-day strip', () => {
+    render(<FloraApp />);
+    fireEvent.click(screen.getByText('Water'));
+    const dayBtns = document.querySelectorAll('.day-btn');
+    expect(dayBtns).toHaveLength(14);
+  });
+
+  test('shows overdue plant when last watered 10 days ago with 7-day interval', () => {
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+    const plants = [
+      { id: 1, name: 'Pothos', family: 'Araceae', health: 70, lastWateredDate: tenDaysAgo.toISOString(), emoji: '🍃', color: '#40916C', resultData: { care: { water: 'Every 7 days' } } },
+    ];
+    localStorage.setItem('greenie_library', JSON.stringify(plants));
+    render(<FloraApp />);
+    fireEvent.click(screen.getByText('Water'));
+    expect(screen.getByText('Overdue')).toBeInTheDocument();
+    expect(screen.getByText('Pothos')).toBeInTheDocument();
+  });
+
+  test('Water button removes plant from overdue list', () => {
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+    const plants = [
+      { id: 1, name: 'Pothos', family: 'Araceae', health: 70, lastWateredDate: tenDaysAgo.toISOString(), emoji: '🍃', color: '#40916C', resultData: { care: { water: 'Every 7 days' } } },
+    ];
+    localStorage.setItem('greenie_library', JSON.stringify(plants));
+    render(<FloraApp />);
+    fireEvent.click(screen.getByText('Water'));
+    expect(screen.getByText('Pothos')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('💧 Water'));
+    expect(screen.queryByText('Pothos')).not.toBeInTheDocument();
+    expect(screen.getByText(/No watering needed/i)).toBeInTheDocument();
+  });
+
+  test('shows "no watering needed" when plant was watered today with 7-day interval', () => {
+    const today = new Date();
+    const plants = [
+      { id: 1, name: 'Cactus', family: 'Cactaceae', health: 95, lastWateredDate: today.toISOString(), emoji: '🌵', color: '#52B788', resultData: { care: { water: 'Every 7 days' } } },
+    ];
+    localStorage.setItem('greenie_library', JSON.stringify(plants));
+    render(<FloraApp />);
+    fireEvent.click(screen.getByText('Water'));
+    expect(screen.getByText(/No watering needed/i)).toBeInTheDocument();
   });
 });

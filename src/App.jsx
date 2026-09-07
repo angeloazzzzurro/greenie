@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 
-const SCREENS = { HOME: "home", SCAN: "scan", RESULT: "result", LIBRARY: "library", MAP: "map" };
+const SCREENS = { HOME: "home", SCAN: "scan", RESULT: "result", LIBRARY: "library", MAP: "map", CALENDAR: "calendar" };
 
 const ROOMS = [
   { id: "living",   name: "Living Room", icon: "🛋️",  color: "#2D6A4F" },
@@ -933,6 +933,114 @@ const styles = `
   .assign-family { font-size: 12px; color: var(--text-muted); font-style: italic; margin-top: 2px; }
   .assign-from { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
   .assign-arrow { font-size: 18px; color: var(--green-bright); font-weight: 300; }
+
+  /* ── Calendar ── */
+  .cal-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 0 100px;
+    scrollbar-width: none;
+  }
+  .cal-scroll::-webkit-scrollbar { display: none; }
+
+  .days-strip {
+    display: flex;
+    gap: 8px;
+    padding: 4px 24px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+  .days-strip::-webkit-scrollbar { display: none; }
+
+  .day-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    min-width: 48px;
+  }
+  .day-btn.active {
+    background: var(--green-mid);
+    border-color: var(--green-bright);
+  }
+  .day-btn.today { border-color: rgba(82,183,136,0.4); }
+  .day-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+  .day-num { font-size: 17px; font-weight: 600; color: var(--text); }
+  .day-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green-bright); }
+  .day-btn.active .day-label,
+  .day-btn.active .day-num { color: var(--text); }
+
+  .cal-section { padding: 0 24px 4px; }
+  .cal-section-title {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    padding-top: 16px;
+  }
+
+  .cal-plant-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .cal-plant-card.overdue { border-color: rgba(224,122,95,0.3); background: rgba(224,122,95,0.06); }
+  .cal-plant-card.due-today { border-color: rgba(242,204,143,0.3); background: rgba(242,204,143,0.05); }
+
+  .cal-urgency {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+
+  .cal-emoji {
+    width: 44px; height: 44px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+
+  .cal-info { flex: 1; min-width: 0; }
+  .cal-name { font-size: 15px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-due  { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  .cal-due.overdue { color: #E07A5F; }
+  .cal-due.due-today { color: #F2CC8F; }
+
+  .cal-water-btn {
+    padding: 7px 14px;
+    background: var(--green-mid);
+    color: var(--text);
+    border: none;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-body);
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+  }
+  .cal-water-btn:active { opacity: 0.7; }
+  .cal-water-btn.done { background: rgba(82,183,136,0.15); color: var(--green-bright); }
+
+  .cal-empty {
+    text-align: center;
+    padding: 40px 24px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 300;
+  }
 `;
 
 // ─── Anthropic API ────────────────────────────────────────────────────────────
@@ -1016,6 +1124,18 @@ const MapIcon = ({ active }) => (
     <polygon points="3 7 9 4 15 7 21 4 21 17 15 20 9 17 3 20"/>
     <line x1="9" y1="4" x2="9" y2="17"/>
     <line x1="15" y1="7" x2="15" y2="20"/>
+  </svg>
+);
+
+const CalendarIcon = ({ active }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke={active ? "#52B788" : "#6B8F71"} strokeWidth="1.8">
+    <rect x="3" y="4" width="18" height="18" rx="3"/>
+    <line x1="16" y1="2" x2="16" y2="6"/>
+    <line x1="8" y1="2" x2="8" y2="6"/>
+    <line x1="3" y1="10" x2="21" y2="10"/>
+    <circle cx="8" cy="15" r="1" fill={active ? "#52B788" : "#6B8F71"}/>
+    <circle cx="12" cy="15" r="1" fill={active ? "#52B788" : "#6B8F71"}/>
+    <circle cx="16" cy="15" r="1" fill={active ? "#52B788" : "#6B8F71"}/>
   </svg>
 );
 
@@ -1523,6 +1643,178 @@ function MapScreen({ library, setScreen }) {
   );
 }
 
+// ─── Calendar helpers ─────────────────────────────────────────────────────────
+
+function parseWaterDays(waterText) {
+  if (!waterText) return 7;
+  const range = waterText.match(/(\d+)\s*[-–]\s*(\d+)\s*days?/i);
+  if (range) return Math.round((+range[1] + +range[2]) / 2);
+  const single = waterText.match(/every\s+(\d+)\s*days?/i);
+  if (single) return +single[1];
+  const weeks = waterText.match(/(\d+)\s*weeks?/i);
+  if (weeks) return +weeks[1] * 7;
+  if (/week/i.test(waterText)) return 7;
+  if (/2[-–]3\s*times/i.test(waterText)) return 3;
+  if (/times?\s+a\s+week/i.test(waterText)) return 3;
+  return 7;
+}
+
+function toDateStr(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function CalendarScreen({ library, updateWatered, setScreen }) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const days = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    return d;
+  });
+
+  const [selectedDay, setSelectedDay] = useState(toDateStr(today));
+
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const plantNextDate = (plant) => {
+    if (!plant.lastWateredDate) return today;
+    const interval = parseWaterDays(plant.resultData?.care?.water);
+    const last = new Date(plant.lastWateredDate);
+    last.setHours(0, 0, 0, 0);
+    const next = new Date(last);
+    next.setDate(last.getDate() + interval);
+    return next;
+  };
+
+  const plantsForDay = (dayStr) => {
+    const day = new Date(dayStr);
+    return library.filter(p => {
+      const next = plantNextDate(p);
+      if (dayStr === toDateStr(today)) return next <= day;
+      return toDateStr(next) === dayStr;
+    });
+  };
+
+  const hasDot = (d) => plantsForDay(toDateStr(d)).length > 0;
+
+  const selectedDate = new Date(selectedDay);
+  const isToday = toDateStr(selectedDate) === toDateStr(today);
+  const dayPlants = plantsForDay(selectedDay);
+
+  const overdueOnSelected = isToday
+    ? dayPlants.filter(p => plantNextDate(p) < today)
+    : [];
+  const dueOnSelected = isToday
+    ? dayPlants.filter(p => toDateStr(plantNextDate(p)) === selectedDay)
+    : dayPlants;
+
+  const getStatus = (plant) => {
+    const next = plantNextDate(plant);
+    if (next < today) return "overdue";
+    if (toDateStr(next) === toDateStr(today)) return "due-today";
+    return "ok";
+  };
+
+  const getDueLabel = (plant) => {
+    const next = plantNextDate(plant);
+    const diff = Math.round((next - today) / 86400000);
+    if (diff < 0) return `Overdue by ${Math.abs(diff)} day${Math.abs(diff) !== 1 ? "s" : ""}`;
+    if (diff === 0) return "Due today";
+    if (diff === 1) return "Due tomorrow";
+    return `Due in ${diff} days`;
+  };
+
+  const PlantRow = ({ plant }) => {
+    const status = getStatus(plant);
+    const interval = parseWaterDays(plant.resultData?.care?.water);
+    const lastWatered = new Date(plant.lastWateredDate);
+    lastWatered.setHours(0, 0, 0, 0);
+    const wateredToday = toDateStr(lastWatered) === toDateStr(today);
+
+    return (
+      <div className={`cal-plant-card ${status}`}>
+        <div className="cal-urgency" style={{
+          background: status === "overdue" ? "#E07A5F" : status === "due-today" ? "#F2CC8F" : "#52B788"
+        }} />
+        <div className="cal-emoji" style={{ background: plant.color + "33" }}>{plant.emoji}</div>
+        <div className="cal-info">
+          <div className="cal-name">{plant.name}</div>
+          <div className={`cal-due ${status}`}>
+            {getDueLabel(plant)} · every {interval}d
+          </div>
+        </div>
+        <button
+          className={`cal-water-btn${wateredToday ? " done" : ""}`}
+          onClick={() => !wateredToday && updateWatered(plant.id)}
+        >
+          {wateredToday ? "✓ Done" : "💧 Water"}
+        </button>
+      </div>
+    );
+  };
+
+  return (
+    <div className="screen" style={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      <div className="lib-header" style={{ flexShrink: 0 }}>
+        <div className="lib-title">Watering</div>
+        <div className="lib-subtitle">{library.length} plants to track</div>
+      </div>
+
+      <div className="days-strip">
+        {days.map(d => {
+          const str = toDateStr(d);
+          const active = str === selectedDay;
+          const isT = str === toDateStr(today);
+          return (
+            <div
+              key={str}
+              className={`day-btn${active ? " active" : ""}${isT && !active ? " today" : ""}`}
+              onClick={() => setSelectedDay(str)}
+            >
+              <div className="day-label">{DAY_NAMES[d.getDay()]}</div>
+              <div className="day-num">{d.getDate()}</div>
+              {hasDot(d) && !active && <div className="day-dot" />}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="cal-scroll">
+        {library.length === 0 ? (
+          <div className="cal-empty">
+            <div style={{ fontSize: 40, marginBottom: 12 }}>💧</div>
+            <div>No plants to track yet</div>
+            <div style={{ marginTop: 6, fontSize: 12 }}>Add plants via Scan to see their schedule</div>
+          </div>
+        ) : dayPlants.length === 0 ? (
+          <div className="cal-empty">
+            <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
+            <div>No watering needed {isToday ? "today" : "on this day"}</div>
+          </div>
+        ) : (
+          <>
+            {overdueOnSelected.length > 0 && (
+              <div className="cal-section">
+                <div className="cal-section-title">Overdue</div>
+                {overdueOnSelected.map(p => <PlantRow key={p.id} plant={p} />)}
+              </div>
+            )}
+            {dueOnSelected.length > 0 && (
+              <div className="cal-section">
+                <div className="cal-section-title">{isToday ? "Due today" : `${DAY_NAMES[selectedDate.getDay()]} ${selectedDate.getDate()}`}</div>
+                {dueOnSelected.map(p => <PlantRow key={p.id} plant={p} />)}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <BottomNav current="calendar" setScreen={setScreen} />
+    </div>
+  );
+}
+
 function BottomNav({ current, setScreen }) {
   return (
     <div className="bottom-nav">
@@ -1544,6 +1836,10 @@ function BottomNav({ current, setScreen }) {
       <div className={`nav-item ${current === "map" ? "active" : ""}`} onClick={() => setScreen(SCREENS.MAP)}>
         <MapIcon active={current === "map"} />
         <div className="nav-label" style={{ color: current === "map" ? "#52B788" : "#6B8F71" }}>Map</div>
+      </div>
+      <div className={`nav-item ${current === "calendar" ? "active" : ""}`} onClick={() => setScreen(SCREENS.CALENDAR)}>
+        <CalendarIcon active={current === "calendar"} />
+        <div className="nav-label" style={{ color: current === "calendar" ? "#52B788" : "#6B8F71" }}>Water</div>
       </div>
       <div className={`nav-item ${current === "library" ? "active" : ""}`} onClick={() => setScreen(SCREENS.LIBRARY)}>
         <LibIcon active={current === "library"} />
@@ -1647,6 +1943,7 @@ export default function FloraApp() {
           />
         )}
         {screen === SCREENS.MAP && <MapScreen library={library} setScreen={setScreen} />}
+        {screen === SCREENS.CALENDAR && <CalendarScreen library={library} updateWatered={updateWatered} setScreen={setScreen} />}
       </div>
     </>
   );
