@@ -1822,6 +1822,10 @@ function BottomNav({ current, setScreen }) {
         <HomeIcon active={current === "home"} />
         <div className="nav-label" style={{ color: current === "home" ? "#52B788" : "#6B8F71" }}>Home</div>
       </div>
+      <div className={`nav-item ${current === "map" ? "active" : ""}`} onClick={() => setScreen(SCREENS.MAP)}>
+        <MapIcon active={current === "map"} />
+        <div className="nav-label" style={{ color: current === "map" ? "#52B788" : "#6B8F71" }}>Map</div>
+      </div>
       <div className="nav-item" onClick={() => setScreen(SCREENS.SCAN)}>
         <div style={{
           width: 50, height: 50, borderRadius: 16,
@@ -1832,10 +1836,6 @@ function BottomNav({ current, setScreen }) {
           <ScanIcon />
         </div>
         <div className="nav-label" style={{ color: "#6B8F71", marginTop: 2 }}>Scan</div>
-      </div>
-      <div className={`nav-item ${current === "map" ? "active" : ""}`} onClick={() => setScreen(SCREENS.MAP)}>
-        <MapIcon active={current === "map"} />
-        <div className="nav-label" style={{ color: current === "map" ? "#52B788" : "#6B8F71" }}>Map</div>
       </div>
       <div className={`nav-item ${current === "calendar" ? "active" : ""}`} onClick={() => setScreen(SCREENS.CALENDAR)}>
         <CalendarIcon active={current === "calendar"} />
